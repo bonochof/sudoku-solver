@@ -1,4 +1,5 @@
 require "./print_grid.rb"
+require "./solve.rb"
 require "./make_grid.rb"
 
 ARGF.each do |line|

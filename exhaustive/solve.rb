@@ -40,4 +40,3 @@ def fixed_numbers (grid, p)
   column(grid, p).compact |
   square(grid, p).compact
 end
-

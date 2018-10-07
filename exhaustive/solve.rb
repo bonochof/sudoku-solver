@@ -1,19 +1,22 @@
 def solve (grid)
-  solve_sub(grid, 0)
+  solve_sub(grid)
   grid
 end
 
-def solve_sub (grid, p)
-  if p > 80
-    return true
+def solve_sub (grid)
+  es = empty_cells(grid)
+  if es.empty?
+    true
   else
-    if grid[p]
-      solve_sub(grid, p+1)
+    pl = es.collect{|p| [p, possible_numbers(grid, p)]}.sort_by{|x| x[1].length}
+    if pl.empty?
+      false
     else
-      possible_numbers(grid, p).each do |v|
+      p, numbers = pl[0]
+      numbers.each do |v|
         grid[p] = v
-        if solve_sub(grid, p+1)
-            return true
+        if solve_sub(grid)
+          return true
         end
       end
       grid[p] = nil
@@ -32,6 +35,10 @@ end
 
 def square (grid, p)
   (0..8).collect{|k| grid[9*(3*(p/9/3)+(k/3))+3*(p%9/3)+(k%3)]}
+end
+
+def empty_cells (grid)
+  (0..80).select{|p| !grid[p]}
 end
 
 def possible_numbers (grid, p)

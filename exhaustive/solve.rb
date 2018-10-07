@@ -1,27 +1,17 @@
 def solve (grid)
-  solve_sub(grid)
-  grid
-end
-
-def solve_sub (grid)
-  es = empty_cells(grid)
-  if es.empty?
-    true
+  pl = empty_cells(grid).collect{|p| [p, possible_numbers(grid, p)]}.sort_by{|x| x[1].length}
+  if pl.empty?
+    grid
   else
-    pl = es.collect{|p| [p, possible_numbers(grid, p)]}.sort_by{|x| x[1].length}
-    if pl.empty?
-      false
-    else
-      p, numbers = pl[0]
-      numbers.each do |v|
-        grid[p] = v
-        if solve_sub(grid)
-          return true
-        end
+    p, number = pl[0]
+    number.each do |v|
+      grid[p] = v
+      if solve(grid)
+        return grid
       end
-      grid[p] = nil
-      return false
     end
+    grid[p] = nil
+    return false
   end
 end
 

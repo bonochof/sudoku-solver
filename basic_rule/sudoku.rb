@@ -20,6 +20,22 @@ module Sudoku
       when :square then @block[2] = block
       end
     end
+    
+    def empty? ()
+      !@val
+    end
+    
+    def possible_numbers ()
+      @possible
+    end
+    
+    def connected_cells ()
+      @block.collect{|b| b.cell|.inject(:|) - [self]
+    end
+    
+    def connected_empty_cells ()
+      connected_cells().select{|c| c.empty?}
+    end
   end
   
   class Block
@@ -37,6 +53,22 @@ module Sudoku
     
     def external_form ()
       "#{@type.to_s}-#{@id+1}"
+    end
+    
+    def empty_cells ()
+      @cell.select{|c| c.empty?}
+    end
+    
+    def possible_cells (x)
+      empty_cells().select{|s| s.possible.member?(x)}
+    end
+    
+    def assigned_numbers ()
+      @cell.select{|c| c.val}.collect{|c| c.val}
+    end
+    
+    def free_numbers ()
+      (1..9).to_a - assigned_numbers()
     end
   end
   

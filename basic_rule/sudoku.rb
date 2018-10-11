@@ -36,6 +36,10 @@ module Sudoku
     def connected_empty_cells ()
       connected_cells().select{|c| c.empty?}
     end
+    
+    def find_single_number ()
+      (@possible.length == 1 ? Rule.new(:single_number, self, @possible[0]) : nil)
+    end
   end
   
   class Block
@@ -69,6 +73,16 @@ module Sudoku
     
     def free_numbers ()
       (1..9).to_a - assigned_numbers()
+    end
+    
+    def find_single_cell ()
+      free_numbers().collect{|x| ((pc = possible_cells(x)).length == 1 ? Rule.new(:single_cell, pc[0], x, self) : nil)}.compact
+    end
+  end
+  
+  class Rule
+    def initialize (*args)
+      @spec = args
     end
   end
   

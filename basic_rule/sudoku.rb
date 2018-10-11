@@ -23,7 +23,21 @@ module Sudoku
   end
   
   class Block
-  
+    attr_reader :type, :id, :cell
+    
+    def initialize (type, id, cell)
+      @type = type
+      @id = id
+      @cell = cell
+      
+      @cell.each do |c|
+        c.set_block(self)
+      end
+    end
+    
+    def external_form ()
+      "#{@type.to_s}-#{@id+1}"
+    end
   end
   
   class Grid

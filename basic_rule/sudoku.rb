@@ -41,6 +41,16 @@ module Sudoku
   end
   
   class Grid
-  
+    def cell_id (i, j)
+      i * 9 + j
+    end
+    
+    def initialize (string)
+      @cell = string.split(//).enum_for(:each_with_index).collect{|x, i| Cell.new(i, (x =~ /^[1-9]$/ ? x.to_i : nil))}
+      @row = (0..8).collect{|i| Block.new(:row, i, @cell[9*i, 9])}
+      @column = (0..8).collect{|i| Block.new(:column, i, (0..8).collect{|j| @cell[cell_id(j, i)]})}
+      @square = (0..8).collect{|i| Block.new(:square, i, (0..8).collect{|j| @cell[cell_id(3*(i/3)+j/3, 3*(i%3)+j%3)]})}
+      @block = @square + @row + @column
+    end
   end
 end

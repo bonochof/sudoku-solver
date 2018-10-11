@@ -40,6 +40,31 @@ module Sudoku
     def find_single_number ()
       (@possible.length == 1 ? Rule.new(:single_number, self, @possible[0]) : nil)
     end
+    
+    def assign (x)
+      @possible = []
+      @val = x
+    end
+    
+    def cannot_assign (x)
+      @possible = @possible - [x]
+    end
+    
+    def propagate ()
+      connected_empty_cells().each do |c|
+        c.cannot_assign(@val)
+      end
+    end
+    
+    def single_cell (x, block)
+      assign(x)
+      propagate()
+    end
+    
+    def single_number (x)
+      assign(x)
+      propagate()
+    end
   end
   
   class Block

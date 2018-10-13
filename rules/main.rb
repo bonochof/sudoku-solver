@@ -7,7 +7,7 @@ Rules = [:single_cell, :single_number]
 rules = (!param['r'] ? Rules : Rules[0, param['r'].to_i])
 
 ARGF.each do |line|
-  line.cnomp!
+  line.chomp!
   next if line =~ /^\s*$/
   print line, "\n"
   

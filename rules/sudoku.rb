@@ -30,7 +30,7 @@ module Sudoku
     end
     
     def connected_cells ()
-      @block.collect{|b| b.cell|.inject(:|) - [self]
+      @block.collect{|b| b.cell}.inject(:|) - [self]
     end
     
     def connected_empty_cells ()
@@ -135,7 +135,7 @@ module Sudoku
     end
     
     def find_applicable_rules (rules)
-      rules.eaah do |rule|
+      rules.each do |rule|
         applicable = find_applicable_rule_instances(rule)
         return applicable if !applicable.empty?
       end

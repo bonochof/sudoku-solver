@@ -109,6 +109,10 @@ module Sudoku
     def initialize (*args)
       @spec = args
     end
+    
+    def apply ()
+      @spec[1].send(@spec[0], *@spec[2..-1])
+    end
   end
   
   class Grid
@@ -122,6 +126,49 @@ module Sudoku
       @column = (0..8).collect{|i| Block.new(:column, i, (0..8).collect{|j| @cell[cell_id(j, i)]})}
       @square = (0..8).collect{|i| Block.new(:square, i, (0..8).collect{|j| @cell[cell_id(3*(i/3)+j/3, 3*(i%3)+j%3)]})}
       @block = @square + @row + @column
+    end
+    
+    def initial_propagate ()
+      @cell.each do |c|
+        c.propagate() if c.val
+      end
+    end
+    
+    def find_applicable_rules (rules)
+      rules.eaah do |rule|
+        applicable = find_applicable_rule_instances(rule)
+        return applicable if !applicable.empty?
+      end
+    end
+    
+    def find_applicable_rule_instances (rule)
+      case rule
+      when :single_number
+        @cell.collect{|c| c.find_single_number}.compact
+      when :single_cell
+        @block.collect{|b| b.find_single_cell}.flatten
+      end
+    end
+    
+    def solve (rules, verbose=nil)
+      self.initial_propagate
+      step = 0
+      
+      while (!self.solved?) do
+        ar = find_applicable_rules(rules)
+        break if ar.empty?
+        printf("[Step %02d] %02d; %s\n", step+=1, ar[0].external_form) if verbose
+        ar[0].apply
+      end
+      self.solved?
+    end
+    
+    def solved? ()
+      !@cell.find{|c| c.empty?}
+    end
+    
+    def show_result (pad=' ')
+      print((0..8).collect{|i| @cell[9*i, 9].collect{|c| c.val || '.'}.join('')}.join(pad), "\n")
     end
   end
 end

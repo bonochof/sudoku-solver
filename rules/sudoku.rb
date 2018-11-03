@@ -34,7 +34,7 @@ module Sudoku
     end
     
     def possible? (x)
-      @possible.member(x)
+      @possible.member?(x)
     end
     
     def connected_cells ()
@@ -113,7 +113,7 @@ module Sudoku
     end
     
     def free_numbers ()
-      (1..9).to_a - assigned_numbers()
+      (1..9).to_a - self.assigned_numbers()
     end
     
     def find_single_cell ()
@@ -133,9 +133,9 @@ module Sudoku
     
     def single_block (x, except, simulation=nil)
       if simulation
-        empty_cells().find{|c| !c.in?(except) && c.possible?(x)}
+        self.empty_cells().find{|c| !c.in?(except) && c.possible?(x)}
       else
-        empty_cells().each do |c|
+        self.empty_cells().each do |c|
           c.cannot_assign(x) unless c.in?(except)
         end
       end
@@ -329,6 +329,7 @@ module Sudoku
         applicable = find_applicable_rule_instances(rule)
         return applicable if !applicable.empty?
       end
+      []
     end
     
     def find_applicable_rule_instances (rule)
@@ -383,9 +384,9 @@ module Sudoku
       block.collect{|b| [b, b.possible_cells(x)]}.select{|y| y[1].length == 2}.combination(2).collect{|a, b|
         if (a[1] - b[1]).empty?
           nil
-        elsif (b3 = common_block(a[1][0], b[1][0])) && (b4 = common(a[1][1], b[1][1]))
+        elsif (b3 = common_block(a[1][0], b[1][0])) && (b4 = common_block(a[1][1], b[1][1]))
           Rule.new(:igeta_2, x, [a[0], b[0]], [b3, b4], a[1] + b[1]).effective?
-        elsif (b3 = common_block(a[1][0], b[1][1])) && (b4 = common(a[1][1], b[1][0]))
+        elsif (b3 = common_block(a[1][0], b[1][1])) && (b4 = common_block(a[1][1], b[1][0]))
           Rule.new(:igeta_2, x, [a[0], b[0]], [b3, b4], a[1] + b[1]).effective?
         else
           nil

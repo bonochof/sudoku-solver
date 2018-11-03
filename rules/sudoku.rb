@@ -1,6 +1,6 @@
 module Sudoku
   class Cell
-    attr_reader :id, :val, :possible
+    attr_reader :id, :val, :possible, :block
     
     def initialize (id, val)
       @id = id
@@ -21,12 +21,20 @@ module Sudoku
       end
     end
     
+    def in? (block)
+      @block.member?(block)
+    end
+    
     def empty? ()
       !@val
     end
     
     def possible_numbers ()
       @possible
+    end
+    
+    def possible? (x)
+      @possible.member(x)
     end
     
     def connected_cells ()
@@ -113,13 +121,13 @@ module Sudoku
     end
     
     def covered_block (x)
-      possible_cells(x).collect{|c| c.block}.inject(:&).select{|b| b != self}
+      pb = possible_cells(x).collect{|c| c.block}.inject(:&).select{|b| b != self}
+      pb.length == 1 ? pb[0] : nil
     end
     
     def find_single_block ()
       free_numbers().collect{|x|
-        b = covered_block(x)
-        b.length == 1 ? Rule.new(:single_block, b[0], x, self).effective? : nil
+        (b = covered_block(x)) ? Rule.new(:single_block, b, x, self).effective? : nil
       }.compact
     end
     
@@ -128,7 +136,7 @@ module Sudoku
         empty_cells().find{|c| !c.in?(except) && c.possible?(x)}
       else
         empty_cells().each do |c|
-          c.cannot_assign(x) unless x.in?(except)
+          c.cannot_assign(x) unless c.in?(except)
         end
       end
     end
@@ -232,12 +240,37 @@ module Sudoku
       when :single_block
         args = @spec[2..-1] + [simulation]
         @spec[1].send(@spec[0], *args)
-      when :reserve_2_cells
+      when :reserve_2_cells, :reserve_n_cells
         args = @spec + [simulation]
         self.send(*args)
       when :reserve_2_numbers
         args = @spec[0, 3] + [simulation]
         @spec[3].send(*args)
+      when :reserve_n_numbers
+        args = @spec[0, 4] + [simulation]
+        @spec[4].send(*args)
+      when :igeta_2
+        args = @spec + [simulation]
+        self.send(*args)
+      end
+    end
+    
+    def external_form ()
+      case @spec[0]
+      when :single_number
+        [@spec[0], @spec[1].external_form, @spec[2]].join(" ")
+      when :single_cell, :single_block
+        [@spec[0], @spec[1].external_form, @spec[2], @spec[3].external_form].join(" ")
+      when :reserve_2_cells
+        [@spec[0], @spec[1].collect{|c| c.external_form}.join(","), @spec[2].join(","), @spec[3].external_form].join(" ")
+      when :reserve_n_cells
+        [@spec[0], @spec[1], @spec[2].collect{|c| c.external_form}.join(","), @spec[3].join(","), @spec[4].external_form].join(" ")
+      when :reserve_2_numbers
+        [@spec[0], @spec[1].join(","), @spec[2].collect{|c| c.external_form}.join(","), @spec[3].external_form].join(" ")
+      when :reserve_n_numbers
+        [@spec[0], @spec[1], @spec[2].join(","), @spec[3].collect{|c| c.external_form}.join(","), @spec[4].external_form].join(" ")
+      when :igeta_2
+        [@spec[0], @spec[1], @spec[2].collect{|c| c.external_form}.join(","), @spec[3].collect{|c| c.external_form}.join(","), @spec[4].collect{|c| c.external_form}.join(",")].join(" ")
       end
     end
     
@@ -304,6 +337,20 @@ module Sudoku
         @cell.collect{|c| c.find_single_number}.compact
       when :single_cell
         @block.collect{|b| b.find_single_cell}.flatten
+      when :single_block
+        @block.collect{|b| b.find_single_block}.flatten
+      when :reserve_2_cells
+        @block.collect{|b| b.find_reserve_n_cells(2)}.flatten
+      when :reserve_3_cells
+        @block.collect{|b| b.find_reserve_n_cells(3)}.flatten
+      when :reserve_2_numbers
+        @block.collect{|b| b.find_reserve_n_numbers(2)}.flatten
+      when :reserve_3_numbers
+        @block.collect{|b| b.find_reserve_n_numbers(3)}.flatten
+      when :igeta_2
+        self.find_igeta_2()
+      else
+        raise("#{rule} is not implemented")
       end
     end
     

@@ -202,6 +202,18 @@ module Sudoku
         end
       end
     end
+    
+    def cannot_assign (x, except, simulation=nil)
+      if simulation
+        empty_cells().find{|c| (c.block & except).empty? && c.possible.member?(x)}
+      else
+        empty_cells().each do |c|
+          if (c.block & except).empty?
+            c.cannot_assign(x)
+          end
+        end
+      end
+    end
   end
   
   class Rule
@@ -245,6 +257,16 @@ module Sudoku
       else
         cells.each do |c|
           c.cannot_assign_except(numbers)
+        end
+      end
+    end
+    
+    def igeta_2 (x, b12, b34, cells, simulation=nil)
+      if simulation
+        b34.find{|b| b.cannot_assign(x, b12, simulation)}
+      else
+        b34.each do |b|
+          b.cannot_assign(x, b12)
         end
       end
     end
@@ -304,6 +326,28 @@ module Sudoku
     
     def show_result (pad=' ')
       print((0..8).collect{|i| @cell[9*i, 9].collect{|c| c.val || '.'}.join('')}.join(pad), "\n")
+    end
+    
+    def find_igeta_2 ()
+      (1..9).collect{|x| find_igeta_2_sub(@block, x)}.flatten
+    end
+    
+    def find_igeta_2_sub (block, x)
+      block.collect{|b| [b, b.possible_cells(x)]}.select{|y| y[1].length == 2}.combination(2).collect{|a, b|
+        if (a[1] - b[1]).empty?
+          nil
+        elsif (b3 = common_block(a[1][0], b[1][0])) && (b4 = common(a[1][1], b[1][1]))
+          Rule.new(:igeta_2, x, [a[0], b[0]], [b3, b4], a[1] + b[1]).effective?
+        elsif (b3 = common_block(a[1][0], b[1][1])) && (b4 = common(a[1][1], b[1][0]))
+          Rule.new(:igeta_2, x, [a[0], b[0]], [b3, b4], a[1] + b[1]).effective?
+        else
+          nil
+        end
+      }.compact
+    end
+    
+    def common_block (c1, c2)
+      (c1 != c2 && !(b = (c1.block & c2.block)).empty?) ? b[0] : nil
     end
   end
 end

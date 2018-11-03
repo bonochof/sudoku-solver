@@ -144,6 +144,30 @@ module Sudoku
         end
       }.compact
     end
+    
+    def find_reserve_2_numbers ()
+      empty_cells().combination(2).collect{|ci, cj|
+        cin = ci.possible_numbers()
+        cjn = cj.possible_numbers()
+        if cin.length == 2 && cjn.length == 2 && (cin - cjn).empty?
+          Rule.new(:reserve_2_numbers, cin, [ci, cj], self).effective?
+        else
+          nil
+        end
+      }.compact
+    end
+    
+    def reserve_2_numbers (numbers, except, simulation=nil)
+      if simulation
+        (@cell - except).find{|c| !(c.possible & numbers).empty?}
+      else
+        (@cell - except).each do |c|
+          numbers.each do |x|
+            c.cannot_assign(x)
+          end
+        end
+      end
+    end
   end
   
   class Rule
@@ -165,6 +189,9 @@ module Sudoku
       when :reserve_2_cells
         args = @spec + [simulation]
         self.send(*args)
+      when :reserve_2_numbers
+        args = @spec[0, 3] + [simulation]
+        @spec[3].send(*args)
       end
     end
     

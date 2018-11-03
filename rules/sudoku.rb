@@ -50,6 +50,14 @@ module Sudoku
       @possible = @possible - [x]
     end
     
+    def cannot_assign_except (numbers, simulation=nil)
+      if simulation
+        !(@possible - (@possible & numbers)).empty?
+      else
+        @possible = @possible & numbers
+      end
+    end
+    
     def propagate ()
       connected_empty_cells().each do |c|
         c.cannot_assign(@val)
@@ -124,6 +132,18 @@ module Sudoku
         end
       end
     end
+    
+    def find_reserve_2_cells ()
+      free_numbers().combination(2).collect{|x, y|
+        xpc = possible_cells(x)
+        ypc = possible_cells(y)
+        if xpc.length == 2 && ypc.length == 2 && (xpc - ypc).empty?
+          Rule.new(:reserve_2_cells, xpc, [x, y], self).effective?
+        else
+          nil
+        end
+      }.compact
+    end
   end
   
   class Rule
@@ -142,6 +162,19 @@ module Sudoku
       when :single_block
         args = @spec[2..-1] + [simulation]
         @spec[1].send(@spec[0], *args)
+      when :reserve_2_cells
+        args = @spec + [simulation]
+        self.send(*args)
+      end
+    end
+    
+    def reserve_2_cells (cells, numbers, block, simulation=nil)
+      if simulation
+        cells.find{|c| c.cannot_assign_except(numbers, simulation)}
+      else
+        cells.each do |c|
+          c.cannot_assign_except(numbers)
+        end
       end
     end
   end

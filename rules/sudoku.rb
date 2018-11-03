@@ -103,6 +103,27 @@ module Sudoku
     def find_single_cell ()
       free_numbers().collect{|x| ((pc = possible_cells(x)).length == 1 ? Rule.new(:single_cell, pc[0], x, self) : nil)}.compact
     end
+    
+    def covered_block (x)
+      possible_cells(x).collect{|c| c.block}.inject(:&).select{|b| b != self}
+    end
+    
+    def find_single_block ()
+      free_numbers().collect{|x|
+        b = covered_block(x)
+        b.length == 1 ? Rule.new(:single_block, b[0], x, self).effective? : nil
+      }.compact
+    end
+    
+    def single_block (x, except, simulation=nil)
+      if simulation
+        empty_cells().find{|c| !c.in?(except) && c.possible?(x)}
+      else
+        empty_cells().each do |c|
+          c.cannot_assign(x) unless x.in?(except)
+        end
+      end
+    end
   end
   
   class Rule
@@ -110,8 +131,18 @@ module Sudoku
       @spec = args
     end
     
-    def apply ()
-      @spec[1].send(@spec[0], *@spec[2..-1])
+    def effective? ()
+      apply(true) ? self : nil
+    end
+    
+    def apply (simulation=nil)
+      case @spec[0]
+      when :single_number, :single_cell
+        @spec[1].send(@spec[0], *@spec[2..-1])
+      when :single_block
+        args = @spec[2..-1] + [simulation]
+        @spec[1].send(@spec[0], *args)
+      end
     end
   end
   

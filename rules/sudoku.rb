@@ -145,6 +145,17 @@ module Sudoku
       }.compact
     end
     
+    def find_reserve_n_cells (n)
+      free_numbers().combination(n).collect{|numbers|
+        pc = numbers.collect{|x| possible_cells(x)}.inject(:|)
+        if pc.length == n
+          Rule.new(:reserve_n_cells, n, pc, numbers, self).effective?
+        else
+          nil
+        end
+      }.compact
+    end
+    
     def find_reserve_2_numbers ()
       empty_cells().combination(2).collect{|ci, cj|
         cin = ci.possible_numbers()
@@ -157,7 +168,30 @@ module Sudoku
       }.compact
     end
     
+    def find_reserve_n_numbers (n)
+      empty_cells().combination(n).collect{|cells|
+        pn = cells.collect{|c| c.possible_numbers()}.inject(:|)
+        if pn.length == n
+          Rule.new(:reserve_n_numbers, n, pn, cells, self).effective?
+        else
+          nil
+        end
+      }.compact
+    end
+    
     def reserve_2_numbers (numbers, except, simulation=nil)
+      if simulation
+        (@cell - except).find{|c| !(c.possible & numbers).empty?}
+      else
+        (@cell - except).each do |c|
+          numbers.each do |x|
+            c.cannot_assign(x)
+          end
+        end
+      end
+    end
+    
+    def reserve_n_numbers (n, numbers, except, simulation=nil)
       if simulation
         (@cell - except).find{|c| !(c.possible & numbers).empty?}
       else
@@ -196,6 +230,16 @@ module Sudoku
     end
     
     def reserve_2_cells (cells, numbers, block, simulation=nil)
+      if simulation
+        cells.find{|c| c.cannot_assign_except(numbers, simulation)}
+      else
+        cells.each do |c|
+          c.cannot_assign_except(numbers)
+        end
+      end
+    end
+    
+    def reserve_n_cells (n, cells, numbers, block, simulation=nil)
       if simulation
         cells.find{|c| c.cannot_assign_except(numbers, simulation)}
       else
